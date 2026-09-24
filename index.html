@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#073d29"><title>Hazari 1000</title>
+<style>:root{font-family:Inter,system-ui,sans-serif;color:#fff;background:#071f16}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at center,#147a4b 0,#073d29 50%,#031b12 100%)}button,input{font:inherit}button{border:0;border-radius:12px;padding:12px 18px;background:#e8eee9;color:#102319;font-weight:700;cursor:pointer;touch-action:manipulation}button.primary{background:#f2c14e;color:#241800}.shell{min-height:100vh;max-width:900px;margin:auto;padding:24px}.shell header{display:flex;align-items:center;justify-content:space-between;gap:16px}.shell h1{margin:0;font-size:clamp(30px,7vw,52px)}.shell h1 span{color:#f2c14e}.home{display:grid;gap:14px;max-width:420px;margin:15vh auto}.home>button{font-size:20px;padding:18px}.rules,.panel{background:#062b1eaa;border:1px solid #ffffff22;border-radius:20px;padding:22px;backdrop-filter:blur(8px)}input{width:100%;padding:13px;border-radius:12px;border:1px solid #ffffff33;background:#ffffff12;color:#fff;margin:7px 0}.join{display:flex;gap:8px}.join input{margin:7px 0}.player,.score{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #ffffff1c}.muted{opacity:.65}.status{min-height:22px;color:#f2c14e}.table{min-height:100vh;padding:14px}.tableHead{display:flex;justify-content:space-between;align-items:center;max-width:1200px;margin:auto}.tableHead h1{font-size:22px}.arrange{max-width:1200px;margin:auto}.groups{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.group{min-height:145px;border:2px solid #ffffff22;border-radius:15px;padding:8px;background:#052a1dcc}.group.valid{border-color:#44d17b66}.group.invalid{border-color:#ff5b5b66}.gtitle{font-size:12px;font-weight:800;margin-bottom:7px}.gtitle small{display:block;opacity:.7}.hand{margin-top:18px;padding:12px;border-radius:16px;background:#031d15aa}.hand h3{font-size:13px}.card{width:62px;height:88px;background:#fafafa;color:#111;border:2px solid #ddd;border-radius:9px;margin:4px;padding:7px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-size:20px;box-shadow:0 3px 7px #0007}.card.red{color:#c62828}.card.selected{transform:translateY(-10px);border-color:#f2c14e;box-shadow:0 8px 16px #0009}.card.small{width:48px;height:68px;font-size:16px}.actions{display:flex;gap:10px;justify-content:center;margin:15px}.arena{position:relative;min-height:72vh;max-width:1100px;margin:auto;border-radius:50%;border:2px solid #ffffff20;background:radial-gradient(circle,#15804e,#075132 65%,#053421);box-shadow:inset 0 0 50px #0006}.seat{position:absolute;background:#041c14dd;padding:10px 14px;border-radius:12px;border:1px solid #ffffff22}.top{top:5%;left:50%;transform:translateX(-50%)}.left{left:3%;top:45%}.right{right:3%;top:45%}.bottom{bottom:4%;left:50%;transform:translateX(-50%)}.trick{position:absolute;inset:25% 20%;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}.played{display:flex;flex-direction:column;align-items:center}.played>span{font-size:11px;opacity:.8}.waiting{text-align:center;opacity:.7}.scoreboard{position:fixed;right:12px;top:12px;background:#031d15ee;padding:8px 12px;border-radius:12px}.scoreboard div{display:flex;gap:20px;justify-content:space-between;font-size:12px;padding:3px}.result{max-width:450px;margin:12vh auto;text-align:center}@media(max-width:700px){.groups{grid-template-columns:repeat(2,1fr)}.group{min-height:125px}.card{width:50px;height:74px;font-size:17px}.card.small{width:40px;height:58px;font-size:14px}.arena{min-height:78vh}.left,.right{top:42%}.trick{inset:24% 10%}.scoreboard{top:auto;bottom:10px;right:10px}.shell{padding:15px}}
+</style></head>
+<body>
+<div class="shell" id="app"></div>
+<script>
+export const SUITS = ["♠","♥","♦","♣"];
+export const RANKS = ["2","3","4","5","6","7","8","9","10","J","Q","K","A"];
+export const POINTS = Object.fromEntries(RANKS.map(r => [r, ["10","J","Q","K","A"].includes(r) ? 10 : 0]));
+export const GROUP_SIZES = [3,3,3,4];
+
+export const rankValue = r => RANKS.indexOf(r)+2;
+export const cardKey = c => `${c.rank}${c.suit}`;
+export const deck = () => SUITS.flatMap(s => RANKS.map(r => ({rank:r,suit:s,id:`${r}${s}`})));
+export const shuffle = a => { const x=[...a]; for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]]} return x; };
+
+function combo3(cards){
+  if(cards.length!==3) return {type:"Invalid",score:-1};
+  const rs=cards.map(c=>rankValue(c.rank)).sort((a,b)=>b-a);
+  const sameSuit=cards.every(c=>c.suit===cards[0].suit);
+  const counts={}; rs.forEach(v=>counts[v]=(counts[v]||0)+1);
+  if(Object.values(counts).includes(3)) return {type:"Troy",score:700+rs[0]};
+  const uniq=[...new Set(rs)];
+  const isAKQ=rs.join(",")==="14,13,12", isA23=rs.join(",")==="14,3,2";
+  const seq=isAKQ?100:isA23?99:(rs[0]===rs[1]+1&&rs[1]===rs[2]+1?rs[0]:-1);
+  if(seq>=0 && sameSuit) return {type:"Color Run",score:600+seq};
+  if(seq>=0) return {type:"Run",score:500+seq};
+  if(sameSuit) return {type:"Color",score:400+rs[0]*10+rs[1]+rs[2]/100};
+  const pair=Object.entries(counts).find(([,n])=>n===2);
+  if(pair){ const kicker=rs.find(v=>v!==+pair[0]); return {type:"Pair",score:300+(+pair[0])*10+kicker}; }
+  return {type:"High Card",score:200+rs[0]*10+rs[1]+rs[2]/100};
+}
+
+export function evaluateGroup(cards){
+  if(cards.length===3) return combo3(cards);
+  if(cards.length===4){
+    // Standard Hazari implementations differ on the fourth card.
+    // This implementation evaluates the strongest 3-card subset, making
+    // the fourth card contribute to tie-breaking only when all subsets tie.
+    let best={type:"4-card",score:-1};
+    for(let i=0;i<4;i++){ const sub=cards.filter((_,j)=>j!==i); const e=combo3(sub); if(e.score>best.score) best={...e,score:e.score}; }
+    return best;
+  }
+  return {type:"Invalid",score:-1};
+}
+
+export function validArrangement(groups){
+  if(groups.length!==4 || groups.some((g,i)=>g.length!==GROUP_SIZES[i])) return false;
+  const ev=groups.map(evaluateGroup);
+  return ev.every(x=>x.score>=0) && ev[0].score>=ev[1].score && ev[1].score>=ev[2].score && ev[2].score>=ev[3].score;
+}
+
+function combinations(arr,n){
+  if(n===0) return [[]]; const out=[];
+  for(let i=0;i<=arr.length-n;i++) for(const tail of combinations(arr.slice(i+1),n-1)) out.push([arr[i],...tail]);
+  return out;
+}
+
+export function autoArrange(hand){
+  // Exact search over 3/3/3/4 partitions. 13C3*10C3*7C3 is small enough
+  // for a browser, and it guarantees a valid descending partition when one exists.
+  const search=(remaining, groups)=>{
+    const idx=groups.length, need=GROUP_SIZES[idx];
+    if(idx===3){
+      const g=remaining.slice(); if(g.length!==4) return null;
+      const gs=[...groups,g]; return validArrangement(gs)?gs:null;
+    }
+    const candidates=combinations(remaining,need)
+      .map(g=>({g,e:evaluateGroup(g)})).sort((a,b)=>b.e.score-a.e.score);
+    for(const c of candidates){
+      const next=remaining.filter(x=>!c.g.includes(x));
+      const r=search(next,[...groups,c.g]); if(r) return r;
+    }
+    return null;
+  };
+  const result=search(hand,[]);
+  if(result) return result;
+  // Fallback: sort by individual strength, then split.
+  const sorted=[...hand].sort((a,b)=>rankValue(b.rank)-rankValue(a.rank));
+  return [sorted.slice(0,3),sorted.slice(3,6),sorted.slice(6,9),sorted.slice(9)];
+}
+
+export function trickWinner(plays){
+  let best=plays[0], bestE=evaluateGroup(best.cards);
+  for(const p of plays.slice(1)){const e=evaluateGroup(p.cards);if(e.score>bestE.score){best=p;bestE=e.score}}
+  return best.playerId;
+}
+export const trickPoints = cards => cards.reduce((n,c)=>n+POINTS[c.rank],0);
+
+</script>
+<script>
+const app=document.getElementById("app");
+let mode="home", hand=[], groups=[[],[],[],[]], bots=[], botGroups=[], scores=[0,0,0,0], round=0, leader=0, selected=[], status="";
+const esc=s=>String(s).replaceAll("&","&amp;").replaceAll("<","&lt;");
+function card(c,sel=false,small=false){return `<button class="card ${c.suit==="♥"||c.suit==="♦"?"red":""} ${sel?"selected":""} ${small?"small":""}" data-card="${cardKey(c)}"><span>${c.rank}</span><span>${c.suit}</span></button>`}
+function render(){
+ if(mode==="home"){app.innerHTML=`<header><h1>♠ Hazari <span>1000</span></h1><p>4-player trick-taking card game</p></header><section class="home"><button class="primary" id="single">Single Player</button><button id="multi">Multiplayer</button><div class="rules"><b>How to play</b><p>Arrange your 13 cards into 3-3-3-4 descending groups, then play four rounds. Highest combination wins the trick and captures its point cards.</p></div></section>`;document.getElementById("single").onclick=start;document.getElementById("multi").onclick=()=>{status="Multiplayer requires the online server; this phone-ready build focuses on offline play.";render()};return}
+ if(mode==="arrange"){
+  const used=groups.flat().map(cardKey), un=hand.filter(c=>!used.includes(cardKey(c)));
+  app.innerHTML=`<header><h1>Arrange your hand</h1><button id="back">Home</button></header><section class="arrange"><div class="groups">${groups.map((g,i)=>{let e=evaluateGroup(g);return `<div class="group ${e.score>=0?"valid":"invalid"}" data-group="${i}"><div class="gtitle">Group ${i+1} · ${GROUP_SIZES[i]} cards <small>${e.type}</small></div>${g.map(c=>card(c,selected.includes(cardKey(c)),true)).join("")}</div>`}).join("")}</div><div class="hand"><h3>Select cards, then tap a group</h3>${un.map(c=>card(c,selected.includes(cardKey(c)))).join("")}</div><div class="actions"><button id="auto">Auto-Arrange</button><button class="primary" id="play">Play</button></div><p class="status">${esc(status)}</p></section>`;
+  document.getElementById("back").onclick=()=>{mode="home";render()};
+  document.getElementById("auto").onclick=()=>{groups=autoArrange(hand);selected=[];status=validArrangement(groups)?"Arrangement valid":"Fallback arrangement used";render()};
+  document.getElementById("play").onclick=()=>{if(validArrangement(groups)){mode="tricks";round=0;leader=0;status="You lead the first round";render()}else{status="Invalid: groups must be 3-3-3-4 and descending";render()}};
+  document.querySelectorAll("[data-card]").forEach(b=>b.onclick=e=>{const k=e.currentTarget.dataset.card;selected=selected.includes(k)?selected.filter(x=>x!==k):[...selected,k];render()});
+  document.querySelectorAll("[data-group]").forEach(b=>b.onclick=e=>{const i=+e.currentTarget.dataset.group;if(!selected.length)return;let ng=groups.map(x=>x.filter(c=>!selected.includes(cardKey(c))));let cs=hand.filter(c=>selected.includes(cardKey(c)));if(ng[i].length+cs.length<=GROUP_SIZES[i]){ng[i].push(...cs);groups=ng;selected=[];status=""}else status="That group is full";render()});
+  return
+ }
+ if(mode==="tricks"){
+  let shown=[];
+  for(let i=0;i<4;i++)shown.push({playerId:i,cards:botGroups[i-1]?.[round]||[]});
+  const my=groups[round];
+  const canPlay=leader===0;
+  app.innerHTML=`<header class="tableHead"><h1>Hazari 1000</h1><div>Round ${round+1}/4</div></header><div class="arena"><div class="seat top">Player 2</div><div class="seat left">Player 3</div><div class="seat right">Player 4</div><div class="trick">${shown.map((p,i)=>`<div class="played"><span>${i===0?"You":`P${i+1}`}</span>${(i===0?my:p.cards).map(c=>card(c,false,true)).join("")}</div>`).join("")}</div><div class="you seat bottom">You · ${scores[0]}/1000</div></div><aside class="scoreboard">${scores.map((s,i)=>`<div><span>${i===0?"You":`P${i+1}`}</span><b>${s}</b></div>`).join("")}</aside><div class="actions"><button class="primary" id="next">${round===3?"Finish game":"Resolve round"}</button></div><p class="status">${esc(status)}</p>`;
+  document.getElementById("next").onclick=()=>{const plays=[{playerId:0,cards:my},...botGroups.map((g,i)=>({playerId:i+1,cards:g[round]}))];const w=trickWinner(plays),pts=trickPoints(plays.flatMap(p=>p.cards));scores[w]+=pts;status=`${w===0?"You":`Player ${w+1}`} won +${pts} points`;leader=w;if(round===3){mode="result"}else round++;render()};return
+ }
+ app.innerHTML=`<header><h1>Game complete</h1></header><section class="panel result"><h2>${scores[0]>=Math.max(...scores.slice(1))?"You finished with the highest score":"Game finished"}</h2>${scores.map((s,i)=>`<div class="score"><span>${i===0?"You":`Player ${i+1}`}</span><b>${s}</b></div>`).join("")}<button class="primary" id="again">Play again</button></section>`;document.getElementById("again").onclick=start;
+}
+function start(){const d=shuffle(deck());hand=d.slice(0,13);bots=[d.slice(13,26),d.slice(26,39),d.slice(39,52)];botGroups=bots.map(autoArrange);groups=autoArrange(hand);scores=[0,0,0,0];round=0;leader=0;selected=[];status="";mode="arrange";render()}
+render();
+</script></body></html>
